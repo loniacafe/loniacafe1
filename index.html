@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ionia coffee | مینۆیا دیجیتاڵی</title>
-    <!-- فۆنت و ئایکۆن -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Vazirmatn:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Firebase SDK -->
+    <!-- Firebase Realtime Database SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
         :root {
@@ -37,31 +36,18 @@
             --shadow: rgba(65, 19, 26, 0.1);
         }
 
-        * {
-            margin: 0; padding: 0; box-sizing: border-box;
-            font-family: 'Vazirmatn', sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Vazirmatn', sans-serif; -webkit-tap-highlight-color: transparent; }
 
         body {
-            background-color: var(--bg-color);
-            color: var(--cream);
-            min-height: 100vh;
-            padding-bottom: 60px;
-            transition: 0.4s ease;
-            overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 50% 0%, #350f15 0%, transparent 75%),
-                radial-gradient(circle at 10% 100%, #20080c 0%, transparent 50%);
+            background-color: var(--bg-color); color: var(--cream); min-height: 100vh; padding-bottom: 60px;
+            transition: 0.4s ease; overflow-x: hidden;
+            background-image: radial-gradient(circle at 50% 0%, #350f15 0%, transparent 75%), radial-gradient(circle at 10% 100%, #20080c 0%, transparent 50%);
             background-attachment: fixed;
         }
 
         #splashScreen {
-            position: fixed; inset: 0;
-            background-color: #0c0507;
-            z-index: 9999;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
+            position: fixed; inset: 0; background-color: #0c0507; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
             transition: opacity 0.7s ease, visibility 0.7s ease;
         }
 
@@ -72,193 +58,83 @@
         }
 
         .ionia-badge {
-            width: 135px; height: 135px;
-            background: #41131a;
-            border-radius: 50%;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            box-shadow: 0 8px 30px var(--shadow);
-            border: 2px solid rgba(251, 245, 226, 0.15);
-            margin: 0 auto 12px;
-            user-select: none;
+            width: 135px; height: 135px; background: #41131a; border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 8px 30px var(--shadow); border: 2px solid rgba(251, 245, 226, 0.15);
+            margin: 0 auto 12px; user-select: none;
         }
 
-        .badge-icons-row {
-            display: flex; align-items: center; justify-content: center;
-            gap: 5px; height: 56px;
-        }
-        .i-shape {
-            width: 15px; height: 50px;
-            background: #fbf5e2;
-            border-radius: 12px 6px 6px 12px;
-            transform: perspective(100px) rotateY(-8deg);
-        }
-        .o-shape {
-            width: 50px; height: 50px;
-            border: 11.5px solid #fbf5e2;
-            border-radius: 50%;
-        }
-        .badge-text {
-            color: #fbf5e2; font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 700; font-size: 14.5px; letter-spacing: -0.3px; margin-top: 4px;
-        }
-        .badge-flag {
-            display: flex; width: 36px; height: 3px; border-radius: 2px;
-            overflow: hidden; margin-top: 5px;
-        }
+        .badge-icons-row { display: flex; align-items: center; justify-content: center; gap: 5px; height: 56px; }
+        .i-shape { width: 15px; height: 50px; background: #fbf5e2; border-radius: 12px 6px 6px 12px; transform: perspective(100px) rotateY(-8deg); }
+        .o-shape { width: 50px; height: 50px; border: 11.5px solid #fbf5e2; border-radius: 50%; }
+        .badge-text { color: #fbf5e2; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14.5px; letter-spacing: -0.3px; margin-top: 4px; }
+        .badge-flag { display: flex; width: 36px; height: 3px; border-radius: 2px; overflow: hidden; margin-top: 5px; }
         .b-green { background: #008c45; flex: 1; }
         .b-white { background: #ffffff; flex: 1; }
         .b-red   { background: #cd212a; flex: 1; }
 
         .fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
         .container { max-width: 600px; margin: 0 auto; padding: 16px; }
-
         .top-bar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
         .icon-btn {
-            background: var(--surface); border: 1px solid var(--border);
-            color: var(--cream); width: 42px; height: 42px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 17px; transition: 0.3s;
-            box-shadow: 0 4px 12px var(--shadow);
+            background: var(--surface); border: 1px solid var(--border); color: var(--cream); width: 42px; height: 42px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;
+            font-size: 17px; transition: 0.3s; box-shadow: 0 4px 12px var(--shadow);
         }
-        .icon-btn:hover { transform: rotate(45deg); }
 
         header { text-align: center; margin-bottom: 22px; }
         .tagline { color: var(--cream-dim); font-size: 13.5px; font-weight: 300; }
 
         .search-container { position: relative; margin-bottom: 18px; }
         .search-container input {
-            width: 100%; background: var(--surface);
-            border: 1px solid var(--border); padding: 13px 44px 13px 18px;
-            border-radius: 16px; color: var(--cream); font-size: 14px;
-            outline: none; backdrop-filter: blur(10px); transition: 0.3s;
+            width: 100%; background: var(--surface); border: 1px solid var(--border); padding: 13px 44px 13px 18px;
+            border-radius: 16px; color: var(--cream); font-size: 14px; outline: none; backdrop-filter: blur(10px); transition: 0.3s;
         }
-        .search-container input:focus {
-            border-color: var(--cream-dim); box-shadow: 0 0 15px rgba(65, 19, 26, 0.5);
-        }
-        .search-container i {
-            position: absolute; right: 16px; top: 50%;
-            transform: translateY(-50%); color: var(--cream-dim);
-        }
+        .search-container i { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: var(--cream-dim); }
 
-        .categories-scroll {
-            overflow-x: auto; white-space: nowrap; padding-bottom: 8px;
-            margin-bottom: 20px; scrollbar-width: none;
-        }
+        .categories-scroll { overflow-x: auto; white-space: nowrap; padding-bottom: 8px; margin-bottom: 20px; scrollbar-width: none; }
         .categories-scroll::-webkit-scrollbar { display: none; }
 
         .category-btn {
-            background: var(--surface); color: var(--cream-dim);
-            border: 1px solid var(--border); padding: 8px 18px;
-            border-radius: 25px; font-size: 13.5px; cursor: pointer;
-            display: inline-flex; align-items: center; gap: 7px;
+            background: var(--surface); color: var(--cream-dim); border: 1px solid var(--border); padding: 8px 18px;
+            border-radius: 25px; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
             margin-left: 8px; transition: 0.3s;
         }
-        .category-btn.active {
-            background: var(--burgundy); color: #fbf5e2 !important;
-            font-weight: 700; border-color: rgba(251, 245, 226, 0.4);
-            box-shadow: 0 4px 15px rgba(65, 19, 26, 0.6);
-        }
+        .category-btn.active { background: var(--burgundy); color: #fbf5e2 !important; font-weight: 700; border-color: rgba(251, 245, 226, 0.4); }
 
         .menu-list { display: grid; gap: 14px; }
         .menu-card {
-            background: var(--surface); border: 1px solid var(--border);
-            backdrop-filter: blur(12px); border-radius: 18px; padding: 12px;
-            display: flex; align-items: center; gap: 14px; cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            background: var(--surface); border: 1px solid var(--border); backdrop-filter: blur(12px); border-radius: 18px;
+            padding: 12px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: 0.3s ease;
         }
-        .menu-card:active { transform: scale(0.97); }
-
-        .menu-img {
-            width: 80px; height: 80px; border-radius: 14px;
-            object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;
-        }
+        .menu-img { width: 80px; height: 80px; border-radius: 14px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
         .menu-info { flex-grow: 1; }
         .menu-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
         .menu-title { font-size: 15.5px; font-weight: 700; }
-        .badge {
-            background: var(--burgundy-light); color: #fbf5e2;
-            font-size: 10px; padding: 2px 7px; border-radius: 6px;
-        }
-        .menu-desc {
-            font-size: 12px; color: var(--cream-dim); margin-bottom: 6px;
-            display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
-        }
+        .badge { background: var(--burgundy-light); color: #fbf5e2; font-size: 10px; padding: 2px 7px; border-radius: 6px; }
+        .menu-desc { font-size: 12px; color: var(--cream-dim); margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
         .menu-price { font-size: 14.5px; font-weight: 800; color: var(--cream); }
 
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82);
-            backdrop-filter: blur(10px); z-index: 1000; display: none;
-            align-items: flex-end; justify-content: center;
-        }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(10px); z-index: 1000; display: none; align-items: flex-end; justify-content: center; }
         .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--modal-bg); border: 1px solid var(--border); width: 100%; max-width: 500px; border-radius: 28px 28px 0 0; padding: 24px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; left: 20px; top: 20px; background: var(--surface); border: 1px solid var(--border); width: 38px; height: 38px; border-radius: 50%; color: var(--cream); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+        .modal-img-1x1 { width: 100%; max-width: 290px; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 20px; border: 1px solid var(--border); display: block; margin: 0 auto 16px; }
 
-        .modal-content {
-            background: var(--modal-bg); border: 1px solid var(--border);
-            width: 100%; max-width: 500px; border-radius: 28px 28px 0 0;
-            padding: 24px; position: relative; max-height: 90vh;
-            overflow-y: auto; animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        .modal-close {
-            position: absolute; left: 20px; top: 20px;
-            background: var(--surface); border: 1px solid var(--border);
-            width: 38px; height: 38px; border-radius: 50%; color: var(--cream);
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            font-size: 17px; z-index: 10;
-        }
-
-        .modal-img-container { width: 100%; display: flex; justify-content: center; margin-bottom: 18px; }
-        .modal-img-1x1 {
-            width: 100%; max-width: 290px;
-            aspect-ratio: 1 / 1; object-fit: cover;
-            border-radius: 20px; border: 1px solid var(--border);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-        }
-
-        .settings-card {
-            background: var(--surface); border-radius: 16px;
-            padding: 16px; border: 1px solid var(--border); margin-top: 15px;
-        }
-        .setting-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-bottom: 1px solid var(--border);
-        }
+        .settings-card { background: var(--surface); border-radius: 16px; padding: 16px; border: 1px solid var(--border); margin-top: 15px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
         .setting-row:last-child { border-bottom: none; }
         .lang-options { display: flex; gap: 6px; }
-        .lang-btn {
-            background: var(--modal-bg); border: 1px solid var(--border);
-            color: var(--cream); padding: 5px 12px; border-radius: 8px;
-            font-size: 12px; cursor: pointer;
-        }
+        .lang-btn { background: var(--modal-bg); border: 1px solid var(--border); color: var(--cream); padding: 5px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; }
         .lang-btn.active { background: var(--burgundy); color: #fff; font-weight: bold; }
 
-        .creator-card {
-            margin-top: 20px;
-            background: linear-gradient(135deg, rgba(65, 19, 26, 0.6), rgba(25, 8, 12, 0.75));
-            border: 1.5px solid rgba(251, 245, 226, 0.25);
-            border-radius: 20px; padding: 20px 16px; text-align: center;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-        }
-        .creator-badge { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cream-dim); font-weight: 600; }
-        .creator-name { font-size: 21px; font-weight: 800; margin: 6px 0 14px; color: #fbf5e2; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .contact-btn {
-            display: inline-flex; align-items: center; gap: 10px;
-            background: var(--burgundy); color: #fbf5e2; text-decoration: none;
-            padding: 11px 24px; border-radius: 14px; font-size: 14.5px;
-            font-weight: 700; border: 1px solid rgba(251, 245, 226, 0.3); transition: 0.3s;
-        }
+        .creator-card { margin-top: 20px; background: linear-gradient(135deg, rgba(65, 19, 26, 0.6), rgba(25, 8, 12, 0.75)); border: 1.5px solid rgba(251, 245, 226, 0.25); border-radius: 20px; padding: 20px 16px; text-align: center; }
+        .creator-name { font-size: 21px; font-weight: 800; margin: 6px 0 14px; color: #fbf5e2; }
+        .contact-btn { display: inline-flex; align-items: center; gap: 10px; background: var(--burgundy); color: #fbf5e2; text-decoration: none; padding: 11px 24px; border-radius: 14px; font-size: 14.5px; font-weight: 700; border: 1px solid rgba(251, 245, 226, 0.3); }
 
-        footer {
-            text-align: center; margin-top: 35px; padding-top: 20px;
-            border-top: 1px solid var(--border); color: var(--cream-dim); font-size: 12px;
-        }
+        footer { text-align: center; margin-top: 35px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--cream-dim); font-size: 12px; }
     </style>
 </head>
 <body>
@@ -271,30 +147,21 @@
                     <div class="o-shape" style="width: 60px; height: 60px; border-width: 14px;"></div>
                 </div>
                 <div class="badge-text" style="font-size: 17px;">ionia coffee</div>
-                <div class="badge-flag" style="width: 42px; height: 3.5px;">
-                    <div class="b-green"></div><div class="b-white"></div><div class="b-red"></div>
-                </div>
+                <div class="badge-flag" style="width: 42px; height: 3.5px;"><div class="b-green"></div><div class="b-white"></div><div class="b-red"></div></div>
             </div>
         </div>
     </div>
 
     <div class="container fade-in">
         <div class="top-bar">
-            <button class="icon-btn" onclick="openModal('settingsModal')">
-                <i class="fa-solid fa-gear"></i>
-            </button>
+            <button class="icon-btn" onclick="openModal('settingsModal')"><i class="fa-solid fa-gear"></i></button>
         </div>
 
         <header>
             <div class="ionia-badge">
-                <div class="badge-icons-row">
-                    <div class="i-shape"></div>
-                    <div class="o-shape"></div>
-                </div>
+                <div class="badge-icons-row"><div class="i-shape"></div><div class="o-shape"></div></div>
                 <div class="badge-text">ionia coffee</div>
-                <div class="badge-flag">
-                    <div class="b-green"></div><div class="b-white"></div><div class="b-red"></div>
-                </div>
+                <div class="badge-flag"><div class="b-green"></div><div class="b-white"></div><div class="b-red"></div></div>
             </div>
             <p class="tagline" id="taglineText">قەهوا ئەسلا ئیتالی ب تامەکا تایبەت</p>
         </header>
@@ -315,9 +182,7 @@
     <div class="modal-overlay" id="itemModal" onclick="closeModalOnBg(event, 'itemModal')">
         <div class="modal-content">
             <button class="modal-close" onclick="closeModal('itemModal')"><i class="fa-solid fa-xmark"></i></button>
-            <div class="modal-img-container">
-                <img id="detailImg" src="" class="modal-img-1x1" alt="Product 1:1">
-            </div>
+            <img id="detailImg" src="" class="modal-img-1x1" alt="Product 1:1">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                 <h2 id="detailTitle" style="font-size: 19px;"></h2>
                 <span id="detailBadge" class="badge"></span>
@@ -347,28 +212,23 @@
 
                 <div class="setting-row">
                     <span id="themeLabel">ڕوخسار (Theme)</span>
-                    <button class="icon-btn" onclick="toggleTheme()" id="themeToggleBtn" style="width: 36px; height: 36px;">
-                        <i class="fa-solid fa-sun"></i>
-                    </button>
+                    <button class="icon-btn" onclick="toggleTheme()" id="themeToggleBtn" style="width: 36px; height: 36px;"><i class="fa-solid fa-sun"></i></button>
                 </div>
             </div>
 
             <div class="creator-card">
-                <div class="creator-badge" id="devTag">دیزاین و بەرهەمهێنەر</div>
+                <div style="font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--cream-dim); font-weight: 600;" id="devTag">دیزاین و بەرهەمهێنەر</div>
                 <div class="creator-name">Omed Abdulwahid</div>
-                <a href="tel:07507100238" class="contact-btn">
-                    <i class="fa-solid fa-phone"></i>
-                    <span dir="ltr">0750 710 0238</span>
-                </a>
+                <a href="tel:07507100238" class="contact-btn"><i class="fa-solid fa-phone"></i><span dir="ltr">0750 710 0238</span></a>
             </div>
         </div>
     </div>
 
     <script>
-        // کۆنفیگێ دروستێ فایربەیسێ تە
         const firebaseConfig = {
             apiKey: "AIzaSyC4ifR-s3T-nXffNgEKo9feVDV2xdqguiA",
             authDomain: "date-beass.firebaseapp.com",
+            databaseURL: "https://date-beass-default-rtdb.firebaseio.com",
             projectId: "date-beass",
             storageBucket: "date-beass.firebasestorage.app",
             messagingSenderId: "87875174555",
@@ -377,26 +237,14 @@
         };
 
         firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const rtdb = firebase.database();
 
-        const defaultCategories = [
-            { id: 'hot', order: 1, title: { ku: 'گەرم و ئێسپرێسۆ', en: 'Hot & Espresso', ar: 'ساخن وإسبريسو' }, icon: 'fa-mug-hot' },
-            { id: 'cold', order: 2, title: { ku: 'ڤەخوارنێن سار', en: 'Cold Drinks', ar: 'مشروبات باردة' }, icon: 'fa-snowflake' },
-            { id: 'dessert', order: 3, title: { ku: 'شیریناهی', en: 'Desserts', ar: 'حلويات' }, icon: 'fa-cake-candles' }
-        ];
-
-        const defaultSettings = {
-            tagline: {
-                ku: "قەهوا ئەسلا ئیتالی ب تامەکا تایبەت",
-                en: "The Authentic Italian Coffee Experience",
-                ar: "القهوة الإيطالية الأصيلة بمذاق فريد"
-            },
+        let categories = [];
+        let products = [];
+        let siteSettings = {
+            tagline: { ku: "قەهوا ئەسلا ئیتالی ب تامەکا تایبەت", en: "The Authentic Italian Coffee Experience", ar: "القهوة الإيطالية الأصيلة بمذاق فريد" },
             announcement: "بخێرهاتن بۆ ionia coffee • دەمەکێ خۆش بۆ هەوە دخواازین"
         };
-
-        let categories = JSON.parse(localStorage.getItem('ionia_categories')) || defaultCategories;
-        let products = JSON.parse(localStorage.getItem('ionia_products')) || [];
-        let siteSettings = JSON.parse(localStorage.getItem('ionia_settings')) || defaultSettings;
 
         let currentLang = 'ku';
         let currentCategory = 'all';
@@ -414,31 +262,27 @@
                 setTimeout(() => splash.style.display = 'none', 700);
             }, 1200);
 
-            // وەرگرتنا زیندی ژ فایربەیس
-            db.collection("settings").doc("header").onSnapshot(doc => {
-                if (doc.exists) {
-                    siteSettings = doc.data();
-                    localStorage.setItem('ionia_settings', JSON.stringify(siteSettings));
+            // وەرگرتنا زیندی ژ Realtime Database
+            rtdb.ref('settings/header').on('value', snapshot => {
+                if (snapshot.exists()) {
+                    siteSettings = snapshot.val();
                     applyHeaderSettings();
                 }
             });
 
-            db.collection("settings").doc("categories").onSnapshot(doc => {
-                if (doc.exists && doc.data().list) {
-                    categories = doc.data().list;
-                    localStorage.setItem('ionia_categories', JSON.stringify(categories));
+            rtdb.ref('settings/categories').on('value', snapshot => {
+                if (snapshot.exists()) {
+                    categories = snapshot.val() || [];
                     renderCategories();
                 }
             });
 
-            db.collection("menu_items").orderBy("order", "asc").onSnapshot(snapshot => {
-                const list = [];
-                snapshot.forEach(d => list.push(d.data()));
-                if (list.length > 0) {
-                    products = list;
-                    localStorage.setItem('ionia_products', JSON.stringify(products));
+            rtdb.ref('menu_items').on('value', snapshot => {
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    products = Object.values(data).sort((a,b) => (a.order || 0) - (b.order || 0));
+                    renderMenu();
                 }
-                renderMenu();
             });
         });
 
