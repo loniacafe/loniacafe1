@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ionia coffee | کۆنترۆلا ئەدمینی</title>
+    <!-- فۆنت و ئایکۆن -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=Vazirmatn:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #0a0406;
+            --surface: rgba(38, 12, 17, 0.7);
+            --surface-hover: rgba(58, 19, 27, 0.85);
+            --modal-bg: #160609;
+            --burgundy: #41131a;
+            --burgundy-light: #5e1c26;
+            --cream: #fbf5e2;
+            --cream-dim: rgba(251, 245, 226, 0.65);
+            --border: rgba(251, 245, 226, 0.12);
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: 'Vazirmatn', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--cream);
+            min-height: 100vh;
+            padding-bottom: 70px;
+            background-image: 
+                radial-gradient(circle at 10% 0%, #300d13 0%, transparent 60%),
+                radial-gradient(circle at 90% 100%, #20080c 0%, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* شاشەیا پاسۆردێ ل دەستپێکێ (Admin Lock Screen) */
+        #adminLockScreen {
+            position: fixed; inset: 0;
+            background: #0a0406;
+            z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+
+        .lock-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 30px 24px;
+            border-radius: 24px;
+            text-align: center;
+            max-width: 380px;
+            width: 100%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+        }
+
+        .lock-logo {
+            width: 80px; height: 80px;
+            background: var(--burgundy);
+            border-radius: 50%;
+            margin: 0 auto 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; color: var(--cream);
+            border: 2px solid var(--border);
+        }
+
+        .pass-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+            padding: 13px;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 4px;
+            margin: 18px 0 12px;
+            outline: none;
+        }
+
+        .pass-input:focus { border-color: var(--cream); }
+
+        .container { max-width: 750px; margin: 0 auto; padding: 18px; }
+
+        .admin-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 16px 20px; background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; margin-bottom: 16px; backdrop-filter: blur(10px);
+        }
+
+        .brand-meta { display: flex; align-items: center; gap: 12px; }
+        .mini-logo {
+            width: 48px; height: 48px; background: var(--burgundy);
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 19px; color: #fbf5e2; border: 1px solid var(--border);
+        }
+
+        .header-title h1 { font-size: 17px; font-weight: 800; }
+        .header-title span { font-size: 11px; color: var(--cream-dim); }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px; font-size: 11px;
+            padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border);
+            background: rgba(0, 0, 0, 0.4);
+        }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+        .admin-tabs {
+            display: flex; gap: 8px; margin-bottom: 18px;
+            border-bottom: 1px solid var(--border); padding-bottom: 10px; overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: var(--surface); border: 1px solid var(--border); color: var(--cream-dim);
+            padding: 9px 16px; border-radius: 12px; font-size: 13px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; white-space: nowrap; transition: 0.3s;
+        }
+        .tab-btn.active {
+            background: var(--burgundy); color: #fbf5e2;
+            border-color: rgba(251, 245, 226, 0.4); font-weight: 700;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .actions-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+        .btn-add {
+            background: var(--burgundy); color: #fbf5e2; border: 1px solid rgba(251, 245, 226, 0.3);
+            padding: 11px 18px; border-radius: 14px; font-size: 13.5px; font-weight: 700;
+            cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+            white-space: nowrap; transition: 0.3s;
+        }
+        .btn-add:hover { background: var(--burgundy-light); transform: translateY(-2px); }
+
+        .search-admin { flex-grow: 1; position: relative; }
+        .search-admin input {
+            width: 100%; height: 100%; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 14px; padding: 0 40px 0 15px;
+            color: #fff; outline: none; font-size: 13.5px;
+        }
+        .search-admin i { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--cream-dim); }
+
+        .admin-card-row {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+            padding: 12px 14px; margin-bottom: 10px; display: flex; align-items: center;
+            justify-content: space-between; gap: 12px; transition: 0.3s;
+        }
+        .admin-card-row:hover { background: var(--surface-hover); border-color: rgba(251, 245, 226, 0.25); }
+
+        .row-left-details { display: flex; align-items: center; gap: 12px; flex-grow: 1; }
+        .thumb-1x1 {
+            width: 60px; height: 60px; aspect-ratio: 1 / 1; border-radius: 12px;
+            object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;
+        }
+        .row-info h3 { font-size: 14.5px; font-weight: 700; margin-bottom: 3px; }
+        .row-sub { font-size: 11.5px; color: var(--cream-dim); }
+
+        .row-controls { display: flex; align-items: center; gap: 5px; }
+        .btn-ctrl {
+            background: rgba(255, 255, 255, 0.06); border: 1px solid var(--border);
+            color: var(--cream); width: 34px; height: 34px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            transition: 0.2s; font-size: 13px;
+        }
+        .btn-ctrl:hover { background: var(--burgundy); }
+        .btn-ctrl.edit:hover { background: #0d6efd; border-color: #0d6efd; }
+        .btn-ctrl.delete:hover { background: var(--danger); border-color: var(--danger); }
+
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px); z-index: 999; display: none;
+            align-items: center; justify-content: center; padding: 16px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-window {
+            background: var(--modal-bg); border: 1px solid var(--border);
+            width: 100%; max-width: 520px; border-radius: 24px; padding: 24px;
+            max-height: 90vh; overflow-y: auto; position: relative;
+        }
+
+        .modal-close {
+            position: absolute; left: 20px; top: 20px; background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border); width: 36px; height: 36px; border-radius: 50%;
+            color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+
+        .form-row { margin-bottom: 14px; text-align: right; }
+        .form-row label { display: block; font-size: 12px; color: var(--cream-dim); margin-bottom: 6px; }
+        .form-row input, .form-row select, .form-row textarea {
+            width: 100%; background: rgba(0, 0, 0, 0.45); border: 1px solid var(--border);
+            padding: 11px 14px; border-radius: 12px; color: #fff; font-size: 13.5px; outline: none;
+        }
+        .form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--cream); }
+
+        .file-upload-container {
+            border: 2px dashed rgba(251, 245, 226, 0.25); border-radius: 16px;
+            padding: 16px; text-align: center; background: rgba(0, 0, 0, 0.2);
+            cursor: pointer; transition: 0.3s;
+        }
+        .file-upload-container:hover { border-color: var(--cream); background: rgba(65, 19, 26, 0.2); }
+        .upload-icon { font-size: 26px; color: var(--cream); margin-bottom: 6px; }
+        .preview-1x1-box {
+            width: 100px; height: 100px; aspect-ratio: 1 / 1; border-radius: 14px;
+            object-fit: cover; border: 2px solid var(--border); margin: 10px auto 0; display: block;
+        }
+
+        .creator-bar {
+            text-align: center; margin-top: 30px; font-size: 12px;
+            color: var(--cream-dim); border-top: 1px solid var(--border); padding-top: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- شاشەیا پاسۆردێ ل دەستپێکێ -->
+    <div id="adminLockScreen">
+        <div class="lock-card">
+            <div class="lock-logo"><i class="fa-solid fa-lock"></i></div>
+            <h2 style="font-size: 18px;">کۆنترۆلا ionia coffee</h2>
+            <p style="font-size: 12px; color: var(--cream-dim); margin-top: 4px;">تکایە پاسۆردێ ئەدمینی بنڤیسە بۆ چونەژوورێ</p>
+            
+            <input type="password" id="adminPassInput" class="pass-input" placeholder="••••" maxlength="8">
+            <button class="btn-add" onclick="unlockAdmin()" style="width: 100%; justify-content: center;">
+                چوونەژوور <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <div id="passError" style="color: var(--danger); font-size: 12px; margin-top: 8px; display: none;">پاسۆرد یێ خەلەتە!</div>
+        </div>
+    </div>
+
+    <!-- ناڤەڕۆکا ئەدمینی (پشتی پاسۆردێ دئێت) -->
+    <div class="container" id="adminDashboard" style="display: none;">
+        
+        <div class="admin-header">
+            <div class="brand-meta">
+                <div class="mini-logo">IO</div>
+                <div class="header-title">
+                    <h1>کۆنترۆلا ionia coffee</h1>
+                    <span>سیستەمێ دەستکاریکرنا بەرهەم، بەش و نڤیسینان</span>
+                </div>
+            </div>
+            
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span>فایربەیس چالاکە (Live Cloud)</span>
+            </div>
+        </div>
+
+        <div class="admin-tabs">
+            <button class="tab-btn active" onclick="switchTab('tabProducts', this)">
+                <i class="fa-solid fa-mug-hot"></i> بەرهەمێن مینۆیێ
+            </button>
+            <button class="tab-btn" onclick="switchTab('tabCategories', this)">
+                <i class="fa-solid fa-layer-group"></i> بەشێن ڤەخوارنان
+            </button>
+            <button class="tab-btn" onclick="switchTab('tabHeader', this)">
+                <i class="fa-solid fa-heading"></i> نڤیسینێن سەری
+            </button>
+        </div>
+
+        <!-- بەشێ 1: بەرهەم -->
+        <div id="tabProducts" class="tab-content active">
+            <div class="actions-bar">
+                <button class="btn-add" onclick="openProductModal()">
+                    <i class="fa-solid fa-plus"></i> بەرهەمێ نوی
+                </button>
+                <div class="search-admin">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="adminSearchInput" placeholder="ل ناڤێ بەرهەمی بگەرە...">
+                </div>
+            </div>
+            <div id="adminProductList"></div>
+        </div>
+
+        <!-- بەشێ 2: بەش -->
+        <div id="tabCategories" class="tab-content">
+            <div class="actions-bar">
+                <button class="btn-add" onclick="openCategoryModal()">
+                    <i class="fa-solid fa-folder-plus"></i> زێدەکرنا بەشەکێ نوی
+                </button>
+            </div>
+            <p style="font-size: 12px; color: var(--cream-dim); margin-bottom: 12px;">
+                💡 ب کلیلێن ⬆️ و ⬇️ ڕێزبەندیا بەشان بگوهۆڕە دا کو دیار بکەی کیش بەش ل پێشتر بهێت.
+            </p>
+            <div id="adminCategoryList"></div>
+        </div>
+
+        <!-- بەشێ 3: نڤیسینێن سەری -->
+        <div id="tabHeader" class="tab-content">
+            <div style="background: var(--surface); padding: 20px; border-radius: 18px; border: 1px solid var(--border);">
+                <h3 style="font-size: 16px; margin-bottom: 15px;"><i class="fa-solid fa-pen-nib"></i> دەستکاریکرنا نڤیسینێن سەرێ مینۆیێ</h3>
+                
+                <div class="form-row">
+                    <label>دەقێ سەرنڤیسێ بن لۆگۆی (Tagline - بادینی)*</label>
+                    <input type="text" id="cfgTaglineKu" placeholder="قەهوا ئەسلا ئیتالی ب تامەکا تایبەت">
+                </div>
+
+                <div class="form-row">
+                    <label>دەقێ سەرنڤیسێ (English Tagline)</label>
+                    <input type="text" id="cfgTaglineEn" placeholder="The Authentic Italian Coffee Experience">
+                </div>
+
+                <div class="form-row">
+                    <label>دەقێ سەرنڤیسێ (Arabic Tagline)</label>
+                    <input type="text" id="cfgTaglineAr" placeholder="القهوة الإيطالية الأصيلة بمذاق فريد">
+                </div>
+
+                <div class="form-row">
+                    <label>پەیاما بخێرهاتنێ ل دووماهیا لاپەڕی (Footer Announcement)</label>
+                    <input type="text" id="cfgAnnouncement" placeholder="بخێرهاتن بۆ ionia coffee • دەمەکێ خۆش بۆ هەوە دخواازین">
+                </div>
+
+                <button class="btn-add" onclick="saveHeaderSettings()" style="width: 100%; justify-content: center; margin-top: 10px;">
+                    <i class="fa-solid fa-floppy-disk"></i> پاشکەوتکرنا نڤیسینان
+                </button>
+            </div>
+        </div>
+
+        <div class="creator-bar">
+            دیزاین و گەشەپێدان: <strong>Omed Abdulwahid</strong> • پەیوەندی: 07507100238
+        </div>
+    </div>
+
+    <!-- مۆدالا بەرهەمی -->
+    <div class="modal-overlay" id="productModal">
+        <div class="modal-window">
+            <button class="modal-close" onclick="closeModal('productModal')"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="productModalTitle" style="font-size: 17px; margin-bottom: 16px;">بەرهەمێ نوی</h2>
+            
+            <form id="itemForm" onsubmit="handleProductSubmit(event)">
+                <input type="hidden" id="prodId">
+                <input type="hidden" id="prodImgData">
+
+                <div class="form-row">
+                    <label>ناڤ ب کوردی (بادینی)*</label>
+                    <input type="text" id="prodTitleKu" required placeholder="بۆ نموونە: سپانیش لاتێ">
+                </div>
+
+                <div class="form-row">
+                    <label>ناڤ ب ئینگلیزی (English)</label>
+                    <input type="text" id="prodTitleEn" placeholder="e.g. Spanish Latte">
+                </div>
+
+                <div class="form-row">
+                    <label>ناڤ ب عەرەبی (العربية)</label>
+                    <input type="text" id="prodTitleAr" placeholder="مثال: سبانش لاتيه">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-row">
+                        <label>بها (Price)*</label>
+                        <input type="text" id="prodPrice" required placeholder="4,500 IQD">
+                    </div>
+                    <div class="form-row">
+                        <label>بەش (Category)*</label>
+                        <select id="prodCategory" required></select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>تایتلێ سەر بەرهەمی (Badge - ئارەزوومەندانە)</label>
+                    <input type="text" id="prodBadge" placeholder="پڕفرۆشترین، تایبەت، نوێ...">
+                </div>
+
+                <div class="form-row">
+                    <label>وێنەیێ بەرهەمی (ژ مۆبایلێ داخڵ بکە یان لینک دابنێ)*</label>
+                    <div class="file-upload-container" onclick="document.getElementById('mobileImgInput').click()">
+                        <i class="fa-solid fa-camera upload-icon"></i>
+                        <div style="font-size: 13px; font-weight: bold;">دەست ل ڤێرە بدە بۆ هەلبژارتنا وێنەی ژ مۆبایلێ</div>
+                        <div style="font-size: 11px; color: var(--cream-dim); margin-top: 3px;">قایسێ 1:1 ب شێوەیەکێ خۆکار دهێتە ڕێکخستن</div>
+                    </div>
+                    <input type="file" id="mobileImgInput" accept="image/*" style="display: none;" onchange="processMobileImage(event)">
+                    
+                    <div style="text-align: center; margin-top: 8px; font-size: 11px; color: var(--cream-dim);">یان لینکێ وێنەی بنڤیسە:</div>
+                    <input type="url" id="prodImgUrl" placeholder="https://..." style="margin-top: 5px;" oninput="previewUrlImage(this.value)">
+
+                    <img id="imgPreview" src="https://via.placeholder.com/100?text=1:1" class="preview-1x1-box" alt="1:1 Preview">
+                </div>
+
+                <div class="form-row">
+                    <label>وەسف و تێبینی*</label>
+                    <textarea id="prodDesc" rows="3" required placeholder="هویرکاریێن بەرهەمی بنڤیسە..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-add" style="width: 100%; justify-content: center; margin-top: 10px;">
+                    <i class="fa-solid fa-check"></i> پاشکەوتکرنا بەرهەمی
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- مۆدالا بەشان -->
+    <div class="modal-overlay" id="categoryModal">
+        <div class="modal-window">
+            <button class="modal-close" onclick="closeModal('categoryModal')"><i class="fa-solid fa-xmark"></i></button>
+            <h2 id="categoryModalTitle" style="font-size: 17px; margin-bottom: 16px;">زێدەکرنا بەشێ نوی</h2>
+            
+            <form id="catForm" onsubmit="handleCategorySubmit(event)">
+                <input type="hidden" id="catKey">
+
+                <div class="form-row">
+                    <label>ناڤێ بەشی ب بادینی (وەک: ڤەخوارنێن سار، تاشتێ...)*</label>
+                    <input type="text" id="catTitleKu" required placeholder="ناڤێ بەشی بنڤیسە">
+                </div>
+
+                <div class="form-row">
+                    <label>ناڤ ب ئینگلیزی (English Name)</label>
+                    <input type="text" id="catTitleEn" placeholder="e.g. Cold Drinks">
+                </div>
+
+                <div class="form-row">
+                    <label>ناڤ ب عەرەبی (Arabic Name)</label>
+                    <input type="text" id="catTitleAr" placeholder="مثال: مشروبات باردة">
+                </div>
+
+                <div class="form-row">
+                    <label>ئایکۆن (FontAwesome Icon Code)</label>
+                    <input type="text" id="catIcon" placeholder="fa-mug-hot یان fa-snowflake">
+                </div>
+
+                <button type="submit" class="btn-add" style="width: 100%; justify-content: center; margin-top: 10px;">
+                    <i class="fa-solid fa-check"></i> پاشکەوتکرنا بەشی
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // پاسۆردێ چونەژوورێ
+        const ADMIN_PIN = "1234";
+
+        function unlockAdmin() {
+            const entered = document.getElementById('adminPassInput').value;
+            if (entered === ADMIN_PIN) {
+                document.getElementById('adminLockScreen').style.display = 'none';
+                document.getElementById('adminDashboard').style.display = 'block';
+            } else {
+                document.getElementById('passError').style.display = 'block';
+            }
+        }
+
+        document.getElementById('adminPassInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') unlockAdmin();
+        });
+
+        // فایربەیسێ تە
+        const firebaseConfig = {
+            apiKey: "AIzaSyC4ifR-s3T-nXffNgEKo9feVDV2xdqguiA",
+            authDomain: "date-beass.firebaseapp.com",
+            projectId: "date-beass",
+            storageBucket: "date-beass.firebasestorage.app",
+            messagingSenderId: "87875174555",
+            appId: "1:87875174555:web:55c3effd64cdd2933cc63e",
+            measurementId: "G-9EYG0V7WRS"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const defaultCategories = [
+            { id: 'hot', order: 1, title: { ku: 'گەرم و ئێسپرێسۆ', en: 'Hot & Espresso', ar: 'ساخن وإسبريسو' }, icon: 'fa-mug-hot' },
+            { id: 'cold', order: 2, title: { ku: 'ڤەخوارنێن سار', en: 'Cold Drinks', ar: 'مشروبات باردة' }, icon: 'fa-snowflake' },
+            { id: 'dessert', order: 3, title: { ku: 'شیریناهی', en: 'Desserts', ar: 'حلويات' }, icon: 'fa-cake-candles' }
+        ];
+
+        const defaultSettings = {
+            tagline: {
+                ku: "قەهوا ئەسلا ئیتالی ب تامەکا تایبەت",
+                en: "The Authentic Italian Coffee Experience",
+                ar: "القهوة الإيطالية الأصيلة بمذاق فريد"
+            },
+            announcement: "بخێرهاتن بۆ ionia coffee • دەمەکێ خۆش بۆ هەوە دخواازین"
+        };
+
+        let categories = JSON.parse(localStorage.getItem('ionia_categories')) || defaultCategories;
+        let products = JSON.parse(localStorage.getItem('ionia_products')) || [];
+        let siteSettings = JSON.parse(localStorage.getItem('ionia_settings')) || defaultSettings;
+
+        window.addEventListener('load', () => {
+            loadHeaderSettings();
+            renderCategoryList();
+            populateCategorySelect();
+            renderProductList();
+
+            // هێنانا داتایان ژ فایربەیس
+            db.collection("settings").doc("header").get().then(doc => {
+                if(doc.exists) {
+                    siteSettings = doc.data();
+                    loadHeaderSettings();
+                }
+            });
+
+            db.collection("settings").doc("categories").get().then(doc => {
+                if(doc.exists && doc.data().list) {
+                    categories = doc.data().list;
+                    renderCategoryList();
+                    populateCategorySelect();
+                }
+            });
+
+            db.collection("menu_items").orderBy("order", "asc").onSnapshot(snapshot => {
+                const list = [];
+                snapshot.forEach(d => list.push(d.data()));
+                if(list.length > 0) {
+                    products = list;
+                    renderProductList();
+                }
+            });
+        });
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function loadHeaderSettings() {
+            document.getElementById('cfgTaglineKu').value = siteSettings.tagline.ku || '';
+            document.getElementById('cfgTaglineEn').value = siteSettings.tagline.en || '';
+            document.getElementById('cfgTaglineAr').value = siteSettings.tagline.ar || '';
+            document.getElementById('cfgAnnouncement').value = siteSettings.announcement || '';
+        }
+
+        function saveHeaderSettings() {
+            siteSettings = {
+                tagline: {
+                    ku: document.getElementById('cfgTaglineKu').value,
+                    en: document.getElementById('cfgTaglineEn').value,
+                    ar: document.getElementById('cfgTaglineAr').value
+                },
+                announcement: document.getElementById('cfgAnnouncement').value
+            };
+            localStorage.setItem('ionia_settings', JSON.stringify(siteSettings));
+            db.collection("settings").doc("header").set(siteSettings);
+            alert("نڤیسینێن سەری د فایربەیسێ دا هاتنە پاشکەوتکرن!");
+        }
+
+        function renderCategoryList() {
+            const container = document.getElementById('adminCategoryList');
+            container.innerHTML = '';
+
+            categories.forEach((cat, index) => {
+                const row = document.createElement('div');
+                row.className = 'admin-card-row';
+                row.innerHTML = `
+                    <div class="row-left-details">
+                        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                            <i class="fa-solid ${cat.icon || 'fa-tag'}"></i>
+                        </div>
+                        <div class="row-info">
+                            <h3>${cat.title.ku}</h3>
+                            <div class="row-sub">${cat.title.en || ''} | ${cat.title.ar || ''}</div>
+                        </div>
+                    </div>
+                    <div class="row-controls">
+                        <button class="btn-ctrl" onclick="reorderCategory(${index}, -1)" ${index === 0 ? 'disabled style="opacity:0.25"' : ''} title="ببە سەرڤە">⬆️</button>
+                        <button class="btn-ctrl" onclick="reorderCategory(${index}, 1)" ${index === categories.length - 1 ? 'disabled style="opacity:0.25"' : ''} title="ببە خوارڤە">⬇️</button>
+                        <button class="btn-ctrl edit" onclick="editCategory(${index})" title="دەستکاری"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-ctrl delete" onclick="deleteCategory(${index})" title="ژێبرن"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function populateCategorySelect() {
+            const select = document.getElementById('prodCategory');
+            select.innerHTML = '';
+            categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.innerText = cat.title.ku;
+                select.appendChild(opt);
+            });
+        }
+
+        function openCategoryModal() {
+            document.getElementById('catForm').reset();
+            document.getElementById('catKey').value = '';
+            document.getElementById('categoryModalTitle').innerText = 'زێدەکرنا بەشێ نوی';
+            openModal('categoryModal');
+        }
+
+        function editCategory(index) {
+            const cat = categories[index];
+            document.getElementById('catKey').value = index;
+            document.getElementById('catTitleKu').value = cat.title.ku;
+            document.getElementById('catTitleEn').value = cat.title.en || '';
+            document.getElementById('catTitleAr').value = cat.title.ar || '';
+            document.getElementById('catIcon').value = cat.icon || '';
+            document.getElementById('categoryModalTitle').innerText = 'دەستکاریکرنا بەشی';
+            openModal('categoryModal');
+        }
+
+        function handleCategorySubmit(e) {
+            e.preventDefault();
+            const editIdx = document.getElementById('catKey').value;
+            const ku = document.getElementById('catTitleKu').value;
+            const en = document.getElementById('catTitleEn').value || ku;
+            const ar = document.getElementById('catTitleAr').value || ku;
+            const icon = document.getElementById('catIcon').value || 'fa-tag';
+
+            if (editIdx !== '') {
+                categories[editIdx].title = { ku, en, ar };
+                categories[editIdx].icon = icon;
+            } else {
+                categories.push({
+                    id: 'cat_' + Date.now(),
+                    order: categories.length + 1,
+                    title: { ku, en, ar },
+                    icon
+                });
+            }
+
+            saveCategories();
+            closeModal('categoryModal');
+        }
+
+        function reorderCategory(index, direction) {
+            const target = index + direction;
+            if (target < 0 || target >= categories.length) return;
+            const temp = categories[index];
+            categories[index] = categories[target];
+            categories[target] = temp;
+            saveCategories();
+        }
+
+        function deleteCategory(index) {
+            if (confirm("تۆ پشتڕاستی تە دڤێت ڤی بەشی ژێببەی؟")) {
+                categories.splice(index, 1);
+                saveCategories();
+            }
+        }
+
+        function saveCategories() {
+            localStorage.setItem('ionia_categories', JSON.stringify(categories));
+            renderCategoryList();
+            populateCategorySelect();
+            db.collection("settings").doc("categories").set({ list: categories });
+        }
+
+        function processMobileImage(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const size = Math.min(img.width, img.height);
+                    canvas.width = 500;
+                    canvas.height = 500;
+                    const ctx = canvas.getContext('2d');
+
+                    const startX = (img.width - size) / 2;
+                    const startY = (img.height - size) / 2;
+                    ctx.drawImage(img, startX, startY, size, size, 0, 0, 500, 500);
+
+                    const base641x1 = canvas.toDataURL('image/jpeg', 0.82);
+                    document.getElementById('prodImgData').value = base641x1;
+                    document.getElementById('imgPreview').src = base641x1;
+                    document.getElementById('prodImgUrl').value = '';
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function previewUrlImage(url) {
+            if (url) {
+                document.getElementById('imgPreview').src = url;
+                document.getElementById('prodImgData').value = url;
+            }
+        }
+
+        function renderProductList() {
+            const container = document.getElementById('adminProductList');
+            const searchVal = document.getElementById('adminSearchInput').value.toLowerCase();
+            container.innerHTML = '';
+
+            const filtered = products.filter(p => (p.title.ku || p.title.en || '').toLowerCase().includes(searchVal));
+
+            filtered.forEach((p, index) => {
+                const title = p.title.ku || p.title.en;
+                const catObj = categories.find(c => c.id === p.category);
+                const catName = catObj ? catObj.title.ku : p.category;
+
+                const row = document.createElement('div');
+                row.className = 'admin-card-row';
+                row.innerHTML = `
+                    <div class="row-left-details">
+                        <img src="${p.img}" class="thumb-1x1" onerror="this.src='https://via.placeholder.com/60?text=1:1'">
+                        <div class="row-info">
+                            <h3>${title}</h3>
+                            <div class="row-sub">
+                                <span style="background: rgba(255,255,255,0.08); padding: 2px 7px; border-radius: 5px;">${catName}</span>
+                                <span style="font-weight: 800; color: #fff; margin-right: 6px;">${p.price}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row-controls">
+                        <button class="btn-ctrl" onclick="reorderProduct(${index}, -1)" ${index === 0 ? 'disabled style="opacity:0.25"' : ''} title="ببە سەرڤە">⬆️</button>
+                        <button class="btn-ctrl" onclick="reorderProduct(${index}, 1)" ${index === products.length - 1 ? 'disabled style="opacity:0.25"' : ''} title="ببە خوارڤە">⬇️</button>
+                        <button class="btn-ctrl edit" onclick="editProduct(${p.id})" title="دەستکاری"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn-ctrl delete" onclick="deleteProduct(${p.id})" title="ژێبرن"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function reorderProduct(index, direction) {
+            const target = index + direction;
+            if (target < 0 || target >= products.length) return;
+            const temp = products[index];
+            products[index] = products[target];
+            products[target] = temp;
+            saveProducts();
+        }
+
+        function openProductModal() {
+            document.getElementById('itemForm').reset();
+            document.getElementById('prodId').value = '';
+            document.getElementById('prodImgData').value = '';
+            document.getElementById('imgPreview').src = 'https://via.placeholder.com/100?text=1:1';
+            document.getElementById('productModalTitle').innerText = 'بەرهەمێ نوی';
+            openModal('productModal');
+        }
+
+        function editProduct(id) {
+            const p = products.find(item => item.id === id);
+            if (!p) return;
+
+            document.getElementById('prodId').value = p.id;
+            document.getElementById('prodTitleKu').value = p.title.ku || '';
+            document.getElementById('prodTitleEn').value = p.title.en || '';
+            document.getElementById('prodTitleAr').value = p.title.ar || '';
+            document.getElementById('prodPrice').value = p.price;
+            document.getElementById('prodCategory').value = p.category;
+            document.getElementById('prodBadge').value = p.badge ? p.badge.ku : '';
+            document.getElementById('prodImgData').value = p.img;
+            document.getElementById('imgPreview').src = p.img;
+            document.getElementById('prodDesc').value = p.desc.ku || '';
+
+            document.getElementById('productModalTitle').innerText = 'دەستکاریکرنا بەرهەمی';
+            openModal('productModal');
+        }
+
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('prodId').value;
+            const ku = document.getElementById('prodTitleKu').value;
+            const en = document.getElementById('prodTitleEn').value || ku;
+            const ar = document.getElementById('prodTitleAr').value || ku;
+            const price = document.getElementById('prodPrice').value;
+            const category = document.getElementById('prodCategory').value;
+            const badge = document.getElementById('prodBadge').value;
+            const img = document.getElementById('prodImgData').value || document.getElementById('prodImgUrl').value || 'https://via.placeholder.com/100?text=1:1';
+            const desc = document.getElementById('prodDesc').value;
+
+            if (id) {
+                const idx = products.findIndex(p => p.id == id);
+                if (idx !== -1) {
+                    products[idx] = {
+                        ...products[idx],
+                        category, price, img,
+                        badge: badge ? { ku: badge, en: badge, ar: badge } : null,
+                        title: { ku, en, ar },
+                        desc: { ku: desc, en: desc, ar: desc }
+                    };
+                }
+            } else {
+                products.unshift({
+                    id: Date.now(),
+                    category, price, img,
+                    badge: badge ? { ku: badge, en: badge, ar: badge } : null,
+                    title: { ku, en, ar },
+                    desc: { ku: desc, en: desc, ar: desc }
+                });
+            }
+
+            saveProducts();
+            closeModal('productModal');
+        }
+
+        function deleteProduct(id) {
+            if (confirm("تۆ پشتڕاستی تە دڤێت ڤی بەرهەمی ژێببەی؟")) {
+                products = products.filter(p => p.id !== id);
+                db.collection("menu_items").doc(String(id)).delete();
+                saveProducts();
+            }
+        }
+
+        function saveProducts() {
+            localStorage.setItem('ionia_products', JSON.stringify(products));
+            renderProductList();
+            const batch = db.batch();
+            products.forEach((item, idx) => {
+                item.order = idx + 1;
+                const ref = db.collection("menu_items").doc(String(item.id));
+                batch.set(ref, item);
+            });
+            batch.commit();
+        }
+
+        document.getElementById('adminSearchInput').addEventListener('input', renderProductList);
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    </script>
+</body>
+</html>
