@@ -239,8 +239,35 @@
         firebase.initializeApp(firebaseConfig);
         const rtdb = firebase.database();
 
-        let categories = [];
-        let products = [];
+        // بەشێن سەرەتایی
+        const defaultCategories = [
+            { id: 'hot', order: 1, title: { ku: 'گەرم و ئێسپرێسۆ', en: 'Hot Coffee', ar: 'قهوة ساخنة' }, icon: 'fa-mug-hot' },
+            { id: 'cold', order: 2, title: { ku: 'ڤەخوارنێن سار', en: 'Iced Drinks', ar: 'مشروبات باردة' }, icon: 'fa-snowflake' },
+            { id: 'mojito', order: 3, title: { ku: 'مۆهیتۆ فرێش', en: 'Mojitos', ar: 'موهيتو' }, icon: 'fa-glass-water' },
+            { id: 'dessert', order: 4, title: { ku: 'شیریناهی و کێک', en: 'Desserts', ar: 'حلويات وكيك' }, icon: 'fa-cake-candles' }
+        ];
+
+        // ۱۵ بەرهەمێن دەولەمەند و تێر و تەسەل یێن نموونەیی
+        const sampleProducts = [
+            { id: 'item_1', order: 1, category: 'hot', price: '3,000 IQD', badge: { ku: 'ئەسڵێ ئیتالی', en: 'Italian Origin', ar: 'إيطالي أصلي' }, title: { ku: 'Espresso Italiano', en: 'Italian Espresso', ar: 'إسبريسو إيطالي' }, desc: { ku: 'قەهوا کلاسیک یا خەست ب دەنکێن تایبەت یێن ionia ب تاما شوکولاتێ.', en: 'Signature double espresso with intense flavor.', ar: 'إسبريسو كلاسيكي غني ومكثف.' }, img: 'https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_2', order: 2, category: 'hot', price: '4,500 IQD', badge: { ku: 'پڕفرۆشترین', en: 'Best Seller', ar: 'الأكثر طلباً' }, title: { ku: 'Ionia Cappuccino', en: 'Ionia Cappuccino', ar: 'كابوتشينو إيونيا' }, desc: { ku: 'ئێسپرێسۆ دگەل کەفا شیری یا خەست و نازک ب شێوازی کلاسیک.', en: 'Italian espresso with silky foam milk.', ar: 'إسبريسو غني برغوة الحليب الناعمة.' }, img: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_3', order: 3, category: 'hot', price: '4,500 IQD', badge: { ku: 'تایبەت', en: 'Special', ar: 'مميز' }, title: { ku: 'Spanish Latte (گەرم)', en: 'Hot Spanish Latte', ar: 'سبانش لاتيه حار' }, desc: { ku: 'تێکەلەکێ تایبەت ژ شیری، شیریناهیێ و ئێسپرێسۆیا گەرم.', en: 'Sweet condensed milk blended with hot espresso.', ar: 'مزيج الحليب المكثف مع الإسبريسو الساخن.' }, img: 'https://images.unsplash.com/photo-1541167760496-1628856ab772?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_4', order: 4, category: 'hot', price: '4,000 IQD', badge: null, title: { ku: 'Flat White', en: 'Flat White', ar: 'فلات وايت' }, desc: { ku: 'قەهوا ئوسترالی یا خەست دگەل شیری ب تامەکا زۆر نەرم.', en: 'Velvety steamed milk over a double shot of espresso.', ar: 'إسبريسو نقي مع حليب مخفوق بلطف.' }, img: 'https://images.unsplash.com/photo-1577968897966-3d4325b36b61?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_5', order: 5, category: 'cold', price: '5,000 IQD', badge: { ku: 'پڕفرۆشترین', en: 'Top Cold', ar: 'الأكثر طلباً' }, title: { ku: 'Iced Spanish Latte', en: 'Iced Spanish Latte', ar: 'سبانش لاتيه بارد' }, desc: { ku: 'شیرێ سار، بەفر، شیری شیرین و ئێسپرێسۆیا فرێش.', en: 'Chilled condensed milk with cold fresh espresso and ice.', ar: 'مزيج بارد منعش من الحليب والإسبريسو المثلج.' }, img: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_6', order: 6, category: 'cold', price: '5,000 IQD', badge: { ku: 'تایبەت', en: 'Popular', ar: 'مميز' }, title: { ku: 'Iced Caramel Macchiato', en: 'Iced Caramel Macchiato', ar: 'آيس كراميل ماكياتو' }, desc: { ku: 'ئێسپرێسۆ، شیرێ تەزی، بەفر و سۆسا کارامێلا فرێش.', en: 'Vanilla syrup, cold milk, espresso and rich caramel drizzle.', ar: 'حليب مثلج مع إسبريسو وصوص الكراميل اللذيذ.' }, img: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_7', order: 7, category: 'cold', price: '3,500 IQD', badge: null, title: { ku: 'Iced Americano', en: 'Iced Americano', ar: 'آيس أمريكانو' }, desc: { ku: 'ئێسپرێسۆیا دوبل دگەل ئاڤ و بەفرا زۆر یا سار و تەزی کەر.', en: 'Rich double espresso served over cold water and ice.', ar: 'إسبريسو نقي ممتزج بالماء والثلج المنعش.' }, img: 'https://images.unsplash.com/photo-1551030173-122aabc4489c?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_8', order: 8, category: 'cold', price: '5,500 IQD', badge: { ku: 'نوێ', en: 'New', ar: 'جديد' }, title: { ku: 'Ionia Mocha Frappé', en: 'Ionia Mocha Frappé', ar: 'آيس موكا فرابيه' }, desc: { ku: 'تێکەلێ شوکولاتێ، کرێما کەل و ئێسپرێسۆیا تەزی.', en: 'Blended mocha frappuccino with whip cream on top.', ar: 'فرابيه الشوكولاتة والقهوة مع الكريمة المخفوقة.' }, img: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_9', order: 9, category: 'mojito', price: '4,500 IQD', badge: { ku: 'تەزی کەر', en: 'Cooling', ar: 'منعش' }, title: { ku: 'Blue Ocean Mojito', en: 'Blue Ocean Mojito', ar: 'بلو أوشن موهيتو' }, desc: { ku: 'لۆمی، نەعنەعا فرێش، سۆدا و تاما بلوبێری یا ئۆقیانووسی.', en: 'Fresh mint, lime, sparkling soda and blue curacao syrup.', ar: 'موهيتو بنكهة التوت الأزرق المنعشة والنعناع والليمون.' }, img: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_10', order: 10, category: 'mojito', price: '4,500 IQD', badge: { ku: 'پڕفرۆشترین', en: 'Best Seller', ar: 'الأكثر طلباً' }, title: { ku: 'Passion Fruit Mojito', en: 'Passion Fruit Mojito', ar: 'موهيتو باشن فروت' }, desc: { ku: 'میوەیا پاسیۆن فروت، لۆمی، نەعنەع و ئاڤا گازدار.', en: 'Exotic passion fruit puree with mint and sparkling soda.', ar: 'مزيج فاكهة الباشن فروت الاستوائية مع الليمون والصودا.' }, img: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_11', order: 11, category: 'mojito', price: '4,500 IQD', badge: null, title: { ku: 'Strawberry Mojito', en: 'Strawberry Mojito', ar: 'موهيتو فراولة' }, desc: { ku: 'فڕاولا فرێش، نەعنەع و لۆمی دگەل بەفرا هویر.', en: 'Crushed sweet strawberries, mint leaves, and lime soda.', ar: 'فراولة طبيعية مع النعناع المنعش وعصير الليمون.' }, img: 'https://images.unsplash.com/photo-1506802913710-40e2e66339c9?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_12', order: 12, category: 'dessert', price: '6,000 IQD', badge: { ku: 'شاهانە', en: 'Signature', ar: 'فاخر' }, title: { ku: 'San Sebastian Cheesecake', en: 'San Sebastian Cheesecake', ar: 'سان سيباستيان تشيز كيك' }, desc: { ku: 'دگەل سۆسا چوکلێتا بلژیکی یا گەرم پێشکێش دبیت.', en: 'Creamy burnt cheesecake served with warm Belgian chocolate.', ar: 'تشيز كيك كريمي محروق يقدم مع الشوكولاتة البلجيكية الساخنة.' }, img: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_13', order: 13, category: 'dessert', price: '5,500 IQD', badge: { ku: 'ئیتالی', en: 'Italian Classic', ar: 'إيطالي' }, title: { ku: 'Classic Tiramisù', en: 'Classic Tiramisù', ar: 'تيراميسو كلاسيك' }, desc: { ku: 'تیرامیسوویا ڕەسەن یا ئیتالی ب کرێما ماسکارپۆنی و قەهوا Ionia.', en: 'Authentic Italian tiramisu with mascarpone and espresso.', ar: 'حلوى التيراميسو الإيطالية الأصلية بكريمة الماسكاربوني الفاخرة.' }, img: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_14', order: 14, category: 'dessert', price: '5,000 IQD', badge: null, title: { ku: 'Chocolate Lava Cake', en: 'Chocolate Lava Cake', ar: 'مولتن شوكولاتة كيك' }, desc: { ku: 'کێکێ شوکولاتێ یێ کەل دگەل ئایسکرێما ڤانێلا.', en: 'Warm chocolate cake with a molten center & vanilla gelato.', ar: 'كيك الشوكولاتة الساخن بالقلب الذائب مع آيس كريم الفانيلا.' }, img: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&h=600&fit=crop&q=80' },
+            { id: 'item_15', order: 15, category: 'dessert', price: '3,500 IQD', badge: { ku: 'فرێش', en: 'Fresh', ar: 'طازج' }, title: { ku: 'French Croissant Nutella', en: 'French Nutella Croissant', ar: 'كرواسان نوتيلا فرنسي' }, desc: { ku: 'کرواسانا فرەنسی یا نازک پڕ ژ شوکولاتێ نۆتێلا یا خۆش.', en: 'Flaky butter croissant filled with delicious rich Nutella.', ar: 'كرواسان زبدة فرنسي هش ومقرمش محشو بكريمة النوتيلا.' }, img: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=600&h=600&fit=crop&q=80' }
+        ];
+
+        let categories = defaultCategories;
+        let products = sampleProducts;
         let siteSettings = {
             tagline: { ku: "قەهوا ئەسلا ئیتالی ب تامەکا تایبەت", en: "The Authentic Italian Coffee Experience", ar: "القهوة الإيطالية الأصيلة بمذاق فريد" },
             announcement: "بخێرهاتن بۆ ionia coffee • دەمەکێ خۆش بۆ هەوە دخواازین"
@@ -262,7 +289,11 @@
                 setTimeout(() => splash.style.display = 'none', 700);
             }, 1200);
 
-            // وەرگرتنا زیندی ژ Realtime Database
+            // نیشاندانا دەستپێکێ ب داتایێن نموونەیی دا چ جاران بەتال نەمینیت
+            renderCategories();
+            renderMenu();
+
+            // چاڤدێرییا زیندی یا فایربەیس
             rtdb.ref('settings/header').on('value', snapshot => {
                 if (snapshot.exists()) {
                     siteSettings = snapshot.val();
@@ -271,14 +302,14 @@
             });
 
             rtdb.ref('settings/categories').on('value', snapshot => {
-                if (snapshot.exists()) {
-                    categories = snapshot.val() || [];
+                if (snapshot.exists() && snapshot.val()) {
+                    categories = snapshot.val();
                     renderCategories();
                 }
             });
 
             rtdb.ref('menu_items').on('value', snapshot => {
-                if (snapshot.exists()) {
+                if (snapshot.exists() && snapshot.val()) {
                     const data = snapshot.val();
                     products = Object.values(data).sort((a,b) => (a.order || 0) - (b.order || 0));
                     renderMenu();
